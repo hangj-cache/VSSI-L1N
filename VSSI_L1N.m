@@ -99,7 +99,7 @@ for iter_ADMM = 1:ADMM_iter
     VS = V * S;
     VS_hat = alpha*VS + (1-alpha)*U_old;
     
-    U = prox(VS_hat + W,lam,rou1); 
+    U = L21_prox(VS_hat + W,lam,rou1); 
 %----------------------------Z update----------------------------%
     SZ_hat = alpha*S + (1-alpha)*Z_old;
 
@@ -235,18 +235,18 @@ A = Kkk * Sss_trunc * Vvv';
 % A = Kkk_trunc * Sss_trunc * Vvv_trunc';
 end
 
-% function x = L21_prox(y,G,lam,rou)
-% temp = lam/rou;
-% numcolumns = size(y,2);
-% x = zeros(size(y));
-% w_s = sum(G.^2,1);
-% for t = 1:numcolumns
-%     threshold = temp * sqrt(w_s(t));
-%     x(:,t) = y(:,t).*(1-min(1,threshold./norm(y(:,t),2))).^max(0,1);
-%      o = max(threshold./norm(y(:,t),2));
-%      i = min(threshold./norm(y(:,t),2));
-% end
-% end
+function x = L21_prox(y,G,lam,rou)
+temp = lam/rou;
+numcolumns = size(y,2);
+x = zeros(size(y));
+w_s = sum(G.^2,1);
+for t = 1:numcolumns
+    threshold = temp * sqrt(w_s(t));
+    x(:,t) = y(:,t).*(1-min(1,threshold./norm(y(:,t),2))).^max(0,1);
+    o = max(threshold./norm(y(:,t),2));
+    i = min(threshold./norm(y(:,t),2));
+end
+end
 
 % function Z = proxl21ARD(Y,w,lam,rou)
 % % Z = arg min_Y 0.5*rou*|| Y-Z ||_2^2 + lam * (sum_k sqrt(sum_t w_k * Z(k,t)^2))
