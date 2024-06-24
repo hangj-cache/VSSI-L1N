@@ -103,8 +103,7 @@ elseif Test
     DefinedArea = 5*1e-4;
 end
 
-outpath = 'E:\项目代码(解压)\code-VSSI-Lp\VMNI_2\result_4\';
-% outpath = 'E:\项目代码(解压)\code-VSSI-Lp\VMNI_2\result_4\';
+outpath = '.....................';
 for i = 1 : size(condition,1)
     path{i} = fullfile(outpath,scenario,'\',num2str(condition(i)));
     if ~exist(path{i})
@@ -118,7 +117,7 @@ end
 
 %% Iteration
     dim = 0;
-    Miter = 30 - dim;   
+    Miter = 50 - dim;   
     Eccentricity = sqrt(sum(GridLoc.^2,2));
     Ec = find(Eccentricity > 70*1e-3);
     %Ec = find(Eccentricity > 70);
@@ -321,14 +320,14 @@ MetricsInterval = [];
 % 
 %     end
 % end
-if VariousChannels                                                                    %这是对通道数条件的试验----通道改变的其实就是数据量
+if VariousChannels                                                                  
     if ~any(ResultsLoading)
-        acnumber = size(B,1);                                                                    % acnumber代表的是通道数
-        cnumber = condition(iteration);                                                                    %这是选择哪一种情况
-        channels = sort(randsample(acnumber,cnumber));                                                                       %这是随机样本，最后进行排序
+        acnumber = size(B,1);                                                                
+        cnumber = condition(iteration);
+        channels = sort(randsample(acnumber,cnumber));
         B = B(channels,:);
-        L = L(channels,:);  %L:mxn---m电极通道数  n源数   这里B和L的B = B(channels,:)因为第一维度都是通道数---m  所以第一维度取channels
-        Result.channels = channels;   %Result是包含源和EEG信号灯所有的信息，是在[Data,s_real,Result] = Simulation_Data_Generate(Gain,Cortex,Time,OPTIONS);得到的
+        L = L(channels,:); 
+        Result.channels = channels;
     else
         channels = Result.channels;
         B = B(channels,:);
