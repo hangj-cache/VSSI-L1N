@@ -230,7 +230,6 @@ end
 % end
 
 function Z = proxl21ARD(Y,w,lam,rou)
-% Z = arg min_Y 0.5*rou*|| Y-Z ||_2^2 + lam * (sum_k sqrt(sum_t w_k * Z(k,t)^2))
 [m,n] = size(Y);
 temp = lam*sqrt(w)./sqrt(sum(Y.^2,2))/rou;
 scale = pos(ones(m,1) - temp);
