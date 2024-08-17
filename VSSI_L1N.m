@@ -15,8 +15,8 @@ tol = 1e-3;
 QUIET = 1;
 rou_update = 1;
 cost = 0;
-rou1 = 6e-10;%6e-10;%6e-11
-rou2 = rou1*50;  %原来：rou1*50---localize-mi成像改为rou1/100
+rou1 = 1e10;
+rou2 = rou1/100;
 
 if(mod(length(varargin),2)==1)
     error('Optional parameters should always go by pairs\n');
@@ -61,10 +61,10 @@ end
 ADMM_iter = 600;
 
 % Initial values
-% TMNE = MNE(B,[],L,[],'MNE');
-% S_MNE = TMNE*B;
-% S = S_MNE;
-S = zeros(Nsource,T);
+TMNE = MNE(B,[],L,[],'MNE');
+S_MNE = TMNE*B;
+S = S_MNE;
+% S = zeros(Nsource,T);
 
 % U = V*S;  U_old = U;
 % Z = S; Z_old = Z;
@@ -73,9 +73,6 @@ U = V*S;  U_old = U;
 Z = S;  Z_old = Z;
 W = zeros(size(V,1),T);
 C = zeros(size(V,2),T);
-
-% kesi = rou1*ones(size(V,1),1);
-
 rou1_old = rou1;
 rou2_old = rou2;
 S_old = S;
@@ -92,6 +89,7 @@ Precision = mu*speye(Nsource) - mu^2*L'/(eye(Nsensor) + mu*LLt)*L;
 tic 
 %% ADMM
 alpha = 0.6;
+w = 1;
 for iter_ADMM = 1:ADMM_iter
 %----------------------------S update----------------------------%
     S = Precision*(LtB + (1/mu)*S - rou1*V'*(V*S - U + W) - rou2*(S - Z + C));
@@ -99,7 +97,7 @@ for iter_ADMM = 1:ADMM_iter
     VS = V * S;
     VS_hat = alpha*VS + (1-alpha)*U_old;
     
-    U = L21_prox(VS_hat + W,lam,rou1); 
+    U = proxl21ARD(VS_hat + W,w,lam,rou1); 
 %----------------------------Z update----------------------------%
     SZ_hat = alpha*S + (1-alpha)*Z_old;
 
@@ -208,15 +206,6 @@ end
 end
 
 
-function Z = prox(Y,lam,rou)
-thr = lam/rou;
-Z = abs(Y);
-Z(Z<=thr) = 0;
-ind = find(Z>0);
-Z(ind) = abs(Y(ind)) - thr;
-Z = sign(Y).*Z;
-end
-
 function A = N_prox(Y,lam,rou)
 [Kkk, Sss, Vvv] = svd(Y, 'econ');
 thr = lam/rou;
@@ -225,36 +214,28 @@ Sss_trunc(Sss_trunc<thr) = 0;
 ind = find(Sss_trunc > 0);
 Sss_trunc(ind) = Sss(ind) - thr;
 A = Kkk * Sss_trunc * Vvv';
-% Keep only the first k columns of U
-% Kkk_trunc = Kkk(:, 1:k);    
-% Keep only the first k rows and columns of S
-% Sss_trunc = Sss(1:k, 1:k);
-% Keep only the first k columns of V
-% Vvv_trunc = Vvv(:, 1:k);
-% Reconstruct the matrix using truncated matrices
-% A = Kkk_trunc * Sss_trunc * Vvv_trunc';
 end
 
-function x = L21_prox(y,G,lam,rou)
-temp = lam/rou;
-numcolumns = size(y,2);
-x = zeros(size(y));
-w_s = sum(G.^2,1);
-for t = 1:numcolumns
-    threshold = temp * sqrt(w_s(t));
-    x(:,t) = y(:,t).*(1-min(1,threshold./norm(y(:,t),2))).^max(0,1);
-    o = max(threshold./norm(y(:,t),2));
-    i = min(threshold./norm(y(:,t),2));
-end
-end
-
-% function Z = proxl21ARD(Y,w,lam,rou)
-% % Z = arg min_Y 0.5*rou*|| Y-Z ||_2^2 + lam * (sum_k sqrt(sum_t w_k * Z(k,t)^2))
-% [m,n] = size(Y);
-% temp = lam*sqrt(w)./sqrt(sum(Y.^2,2))/rou;
-% scale = pos(ones(m,1) - temp);
-% Z = Y.*repmat(scale,1,n);
+% function x = L21_prox(y,G,lam,rou)
+% temp = lam/rou;
+% numcolumns = size(y,2);
+% x = zeros(size(y));
+% w_s = sum(G.^2,1);
+% for t = 1:numcolumns
+%     threshold = temp * sqrt(w_s(t));
+%     x(:,t) = y(:,t).*(1-min(1,threshold./norm(y(:,t),2))).^max(0,1);
+%      o = max(threshold./norm(y(:,t),2));
+%      i = min(threshold./norm(y(:,t),2));
 % end
+% end
+
+function Z = proxl21ARD(Y,w,lam,rou)
+% Z = arg min_Y 0.5*rou*|| Y-Z ||_2^2 + lam * (sum_k sqrt(sum_t w_k * Z(k,t)^2))
+[m,n] = size(Y);
+temp = lam*sqrt(w)./sqrt(sum(Y.^2,2))/rou;
+scale = pos(ones(m,1) - temp);
+Z = Y.*repmat(scale,1,n);
+end
 
 % function x = pos(y)
 % x = max(0, y);
